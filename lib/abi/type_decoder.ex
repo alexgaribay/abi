@@ -179,9 +179,11 @@ defmodule ABI.TypeDecoder do
   end
 
   defp decode_type(:string, data) do
-    {string_size_in_bytes, rest} = decode_uint(data, 256)
-    {raw_bytes, rest} = decode_bytes(rest, string_size_in_bytes, :right)
-    {nul_terminate_string(raw_bytes), rest}
+    <<_index :: integer-size(256), remaining_data :: binary>> = data
+    <<string_length_in_bytes :: integer-size(256), string_data :: binary>> = remaining_data
+    padding_length_in_bytes = 32 - Integer.mod(string_length_in_bytes, 32)
+    <<string :: bytes-size(string_length_in_bytes), _padding :: bytes-size(padding_length_in_bytes), rest :: binary>> = string_data
+    {nul_terminate_string(string), rest}
   end
 
   defp decode_type(:bytes, data) do
